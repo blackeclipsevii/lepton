@@ -54,4 +54,12 @@ extern Sirikata::Array1d<Sirikata::Array1d<uint64_t, NUM_STAGES>, MAX_NUM_THREAD
 extern uint64_t get_time_us(bool force=false);
 void print_results();
 }
+
+namespace llw
+{
+  // the main function
+  // this 'hole' in the code allows the wrapping for llw
+  int theMaine( int argc, char** argv );
+}
+
 #endif

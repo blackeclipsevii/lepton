@@ -334,7 +334,7 @@ std::vector<unsigned int> rst_cnt;
 bool rst_cnt_set = false;
 int            max_file_size    =    0  ;   // support for truncated jpegs 0 means full jpeg
 size_t            start_byte       =    0;     // support for producing a slice of jpeg
-size_t max_encode_threads = 
+size_t max_encode_threads =
 #ifdef DEFAULT_SINGLE_THREAD
                                          1
 #else
@@ -444,7 +444,7 @@ ServiceInfo g_socketserve_info;
 bool g_threaded = true;
 // this overrides the progressive bit in the header so that legacy progressive files may be decoded
 bool g_force_progressive = false;
-bool g_allow_progressive = 
+bool g_allow_progressive =
 #ifdef DEFAULT_ALLOW_PROGRESSIVE
     true
 #else
@@ -678,160 +678,164 @@ void compute_thread_mem(const char * arg,
     main-function
     ----------------------------------------------- */
 
-int main( int argc, char** argv )
+namespace llw
 {
-    g_argc = argc;
-    g_argv = (const char **)argv;
-    TimingHarness::timing[0][TimingHarness::TS_MAIN]
-        = TimingHarness::get_time_us(true);
-    size_t thread_mem_limit = 
-#ifdef HIGH_MEMORY
-        128 * 1024 * 1024
-#else
-        3 * 1024 * 1024
-#endif
-        ;//8192;
-    size_t mem_limit = 
-#ifdef HIGH_MEMORY
-        1280 * 1024 * 1024 - thread_mem_limit * (MAX_NUM_THREADS - 1)
-#else
-        176 * 1024 * 1024 - thread_mem_limit * (MAX_NUM_THREADS - 1)
-#endif
-        ;
-    bool needs_huge_pages = false;
-    for (int i = 1; i < argc; ++i) {
-        bool avx2upgrade = false;
-        compute_thread_mem(argv[i],
-                           &mem_limit,
-                           &thread_mem_limit,
-                           &needs_huge_pages,
-                           &avx2upgrade);
-#ifndef __AVX2__
-#ifndef __clang__
-#ifndef _WIN32
-        if (avx2upgrade &&
-            __builtin_cpu_supports("avx2")
-) {
-            for (int j = i + 1; j < argc; ++j) {
-                argv[j - 1] = argv[j];
-            }
-            --argc;
-            argv[argc] = NULL; // since we have eliminated the upgrade arg...
-            size_t command_len = strlen(argv[0]);
-            size_t postfix_len = strlen("-avx") + 1;
-            char * command = (char*)malloc(postfix_len + command_len);
-            memcpy(command, argv[0], command_len);
-            memcpy(command + command_len, "-avx", postfix_len);
-            char * old_command = argv[0];
-            argv[0] = command;
-            execvp(command, argv);
-            argv[0] = old_command; // exec failed
-        }
-#endif
-#endif
-#endif
-    }
+  int theMaine( int argc, char** argv )
+  {
+      g_argc = argc;
+      g_argv = (const char **)argv;
+      TimingHarness::timing[0][TimingHarness::TS_MAIN]
+          = TimingHarness::get_time_us(true);
+      size_t thread_mem_limit =
+  #ifdef HIGH_MEMORY
+          128 * 1024 * 1024
+  #else
+          3 * 1024 * 1024
+  #endif
+          ;//8192;
+      size_t mem_limit =
+  #ifdef HIGH_MEMORY
+          1280 * 1024 * 1024 - thread_mem_limit * (MAX_NUM_THREADS - 1)
+  #else
+          176 * 1024 * 1024 - thread_mem_limit * (MAX_NUM_THREADS - 1)
+  #endif
+          ;
+      bool needs_huge_pages = false;
+      for (int i = 1; i < argc; ++i) {
+          bool avx2upgrade = false;
+          compute_thread_mem(argv[i],
+                             &mem_limit,
+                             &thread_mem_limit,
+                             &needs_huge_pages,
+                             &avx2upgrade);
+  #ifndef __AVX2__
+  #ifndef __clang__
+  #ifndef _WIN32
+          if (avx2upgrade &&
+              __builtin_cpu_supports("avx2")
+  ) {
+              for (int j = i + 1; j < argc; ++j) {
+                  argv[j - 1] = argv[j];
+              }
+              --argc;
+              argv[argc] = NULL; // since we have eliminated the upgrade arg...
+              size_t command_len = strlen(argv[0]);
+              size_t postfix_len = strlen("-avx") + 1;
+              char * command = (char*)malloc(postfix_len + command_len);
+              memcpy(command, argv[0], command_len);
+              memcpy(command + command_len, "-avx", postfix_len);
+              char * old_command = argv[0];
+              argv[0] = command;
+              execvp(command, argv);
+              argv[0] = old_command; // exec failed
+          }
+  #endif
+  #endif
+  #endif
+      }
 
-    // the system needs 33 megs of ram ontop of the uncompressed image buffer.
-    // This adds a few extra megs just to keep things real
-    UncompressedComponents::max_number_of_blocks = ( mem_limit / 4 ) * 3;
-    if (mem_limit > 48 * 1024 * 1024) {
-        UncompressedComponents::max_number_of_blocks = mem_limit - 36 * 1024 * 1024;
-    }
-    UncompressedComponents::max_number_of_blocks /= (sizeof(uint16_t) * 64);
-    int n_threads = MAX_NUM_THREADS - 1;
-#ifndef __linux
-    n_threads += 4;
-#endif
-#ifndef _WIN32
-    Sirikata::memmgr_init(mem_limit,
-                          thread_mem_limit,
-                          n_threads,
-                          256,
-                          needs_huge_pages);
-#endif
-    clock_t begin = 0, end = 1;
+      // the system needs 33 megs of ram ontop of the uncompressed image buffer.
+      // This adds a few extra megs just to keep things real
+      UncompressedComponents::max_number_of_blocks = ( mem_limit / 4 ) * 3;
+      if (mem_limit > 48 * 1024 * 1024) {
+          UncompressedComponents::max_number_of_blocks = mem_limit - 36 * 1024 * 1024;
+      }
+      UncompressedComponents::max_number_of_blocks /= (sizeof(uint16_t) * 64);
+      int n_threads = MAX_NUM_THREADS - 1;
+  #ifndef __linux
+      n_threads += 4;
+  #endif
+  #ifndef _WIN32
+      Sirikata::memmgr_init(mem_limit,
+                            thread_mem_limit,
+                            n_threads,
+                            256,
+                            needs_huge_pages);
+  #endif
+      clock_t begin = 0, end = 1;
 
-    int error_cnt = 0;
-    int warn_cnt  = 0;
+      int error_cnt = 0;
+      int warn_cnt  = 0;
 
-    int acc_jpgsize = 0;
-    int acc_ujgsize = 0;
+      int acc_jpgsize = 0;
+      int acc_ujgsize = 0;
 
-    int speed, bpms;
-    float cr;
+      int speed, bpms;
+      float cr;
 
-    errorlevel.store(0);
+      errorlevel.store(0);
 
-    // read options from command line
-    int max_file_size = initialize_options( argc, argv );
-    if (action != forkserve && action != socketserve) {
-        // write program info to screen
-        fprintf( msgout,  "%s v%i.0-%s\n",
-                 appname, ujgversion, GIT_REVISION );
-    }
-    // check if user input is wrong, show help screen if it is
-    if ((file_cnt == 0 && action != forkserve && action != socketserve)
-        || ((!developer) && ((action != comp && action != forkserve && action != socketserve)))) {
-        show_help();
-        return -1;
-    }
-
-
-    // (re)set program has to be done first
-    reset_buffers();
-
-    // process file(s) - this is the main function routine
-    begin = clock();
-    if (file_cnt > 2) {
-        show_help();
-        custom_exit(ExitCode::FILE_NOT_FOUND);
-    }
-    if (action == forkserve) {
-#ifdef _WIN32
-        abort(); // not implemented
-#else
-        fork_serve();
-#endif
-    } else if (action == socketserve) {
-#ifdef _WIN32
-        abort(); // not implemented
-#else
-        socket_serve(&process_file, max_file_size, g_socketserve_info);
-#endif
-    } else {
-        process_file(nullptr, nullptr, max_file_size, g_force_zlib0_out);
-    }
-    if (errorlevel.load() >= err_tresh) error_cnt++;
-    if (errorlevel.load() == 1 ) warn_cnt++;
-    if ( errorlevel.load() < err_tresh ) {
-        acc_jpgsize += jpgfilesize;
-        acc_ujgsize += ujgfilesize;
-    }
-    if (!g_use_seccomp) {
-        end = clock();
-    }
-    if (action != socketserve && action != forkserve) {
-        // show statistics
-        fprintf(msgout,  "\n\n-> %i file(s) processed, %i error(s), %i warning(s)\n",
-                file_cnt, error_cnt, warn_cnt);
-    }
-    if ( ( file_cnt > error_cnt ) && ( verbosity > 0 ) )
-    if ( action == comp ) {
-        speed = (int) ( (double) (( end - begin ) * 1000) / CLOCKS_PER_SEC );
-        bpms  = ( speed > 0 ) ? ( acc_jpgsize / speed ) : acc_jpgsize;
-        cr    = ( acc_jpgsize > 0 ) ? ( 100.0 * acc_ujgsize / acc_jpgsize ) : 0;
-
-        fprintf( msgout,  " --------------------------------- \n" );
-        fprintf( msgout,  " time taken        : %8i msec\n", speed );
-        fprintf( msgout,  " avrg. byte per ms : %8i byte\n", bpms );
-        fprintf( msgout,  " avrg. comp. ratio : %8.2f %%\n", cr );
-        fprintf( msgout,  " --------------------------------- \n" );
-    }
+      // read options from command line
+      int max_file_size = initialize_options( argc, argv );
+      if (action != forkserve && action != socketserve) {
+          // write program info to screen
+          fprintf( msgout,  "%s v%i.0-%s\n",
+                   appname, ujgversion, GIT_REVISION );
+      }
+      // check if user input is wrong, show help screen if it is
+      if ((file_cnt == 0 && action != forkserve && action != socketserve)
+          || ((!developer) && ((action != comp && action != forkserve && action != socketserve)))) {
+          show_help();
+          return -1;
+      }
 
 
-    return error_cnt == 0 ? 0 : 1;
+      // (re)set program has to be done first
+      reset_buffers();
+
+      // process file(s) - this is the main function routine
+      begin = clock();
+      if (file_cnt > 2) {
+          show_help();
+          custom_exit(ExitCode::FILE_NOT_FOUND);
+      }
+      if (action == forkserve) {
+  #ifdef _WIN32
+          abort(); // not implemented
+  #else
+          fork_serve();
+  #endif
+      } else if (action == socketserve) {
+  #ifdef _WIN32
+          abort(); // not implemented
+  #else
+          socket_serve(&process_file, max_file_size, g_socketserve_info);
+  #endif
+      } else {
+          process_file(nullptr, nullptr, max_file_size, g_force_zlib0_out);
+      }
+      if (errorlevel.load() >= err_tresh) error_cnt++;
+      if (errorlevel.load() == 1 ) warn_cnt++;
+      if ( errorlevel.load() < err_tresh ) {
+          acc_jpgsize += jpgfilesize;
+          acc_ujgsize += ujgfilesize;
+      }
+      if (!g_use_seccomp) {
+          end = clock();
+      }
+      if (action != socketserve && action != forkserve) {
+          // show statistics
+          fprintf(msgout,  "\n\n-> %i file(s) processed, %i error(s), %i warning(s)\n",
+                  file_cnt, error_cnt, warn_cnt);
+      }
+      if ( ( file_cnt > error_cnt ) && ( verbosity > 0 ) )
+      if ( action == comp ) {
+          speed = (int) ( (double) (( end - begin ) * 1000) / CLOCKS_PER_SEC );
+          bpms  = ( speed > 0 ) ? ( acc_jpgsize / speed ) : acc_jpgsize;
+          cr    = ( acc_jpgsize > 0 ) ? ( 100.0 * acc_ujgsize / acc_jpgsize ) : 0;
+
+          fprintf( msgout,  " --------------------------------- \n" );
+          fprintf( msgout,  " time taken        : %8i msec\n", speed );
+          fprintf( msgout,  " avrg. byte per ms : %8i byte\n", bpms );
+          fprintf( msgout,  " avrg. comp. ratio : %8.2f %%\n", cr );
+          fprintf( msgout,  " --------------------------------- \n" );
+      }
+
+
+      return error_cnt == 0 ? 0 : 1;
+  }
 }
+
 
 
 /* ----------------------- Begin of main interface functions -------------------------- */
@@ -968,7 +972,7 @@ int initialize_options( int argc, const char*const * argv )
         }
         else if ( strncmp((*argv), "-startbyte=", strlen("-startbyte=") ) == 0 ) {
             start_byte = local_atoi((*argv) + strlen("-startbyte="));
-        }        
+        }
         else if ( strncmp((*argv), "-trunc=", strlen("-trunc=") ) == 0 ) {
             max_file_size = local_atoi((*argv) + strlen("-trunc="));
         }
@@ -989,7 +993,7 @@ int initialize_options( int argc, const char*const * argv )
             action = comp;
         } else if ( ( strcmp((*argv), "-info") == 0) ) {
             action = info;
-        } else if ( strcmp((*argv), "-fork") == 0 ) {    
+        } else if ( strcmp((*argv), "-fork") == 0 ) {
             action = forkserve;
             // sets it up in serving mode
             msgout = stderr;
@@ -1020,7 +1024,7 @@ int initialize_options( int argc, const char*const * argv )
             }
         } else if ( strncmp((*argv), "-zliblisten", strlen("-zliblisten")) == 0 ) {
             g_socketserve_info.zlib_port = atoi((*argv) + strlen("-zliblisten="));
-        } else if ( strcmp((*argv), "-") == 0 ) {    
+        } else if ( strcmp((*argv), "-") == 0 ) {
             msgout = stderr;
             // set binary mode for stdin & stdout
             #ifdef _WIN32
@@ -1060,7 +1064,7 @@ size_t decompression_memory_bound() {
     size_t streaming_buffer_size = 0;
     size_t current_run_size = 0;
     for (int i = 0; i < colldata.get_num_components(); ++i) {
-        size_t streaming_size = 
+        size_t streaming_size =
             colldata.block_width(i)
             * 2 * NUM_THREADS * 64 * sizeof(uint16_t);
         size_t frame_buffer_size = colldata.component_size_allocated(i);
@@ -1224,7 +1228,7 @@ int open_fdin(const char *ifilename,
                    IOUtil::FileReader *reader,
                    Sirikata::Array1d<uint8_t, 2> &header,
     bool *is_socket) {
-    int fdin = -1;    
+    int fdin = -1;
     if (reader != NULL) {
         *is_socket = reader->is_socket();
         fdin = reader->get_fd();
@@ -1258,7 +1262,7 @@ int open_fdin(const char *ifilename,
     }
     if (data_read < 0) {
         const char * fail = "Failed to read 2 byte header\n";
-        while(write(2, fail, strlen(fail)) == -1 && errno == EINTR) {}        
+        while(write(2, fail, strlen(fail)) == -1 && errno == EINTR) {}
     }
     return fdin;
 }
@@ -1423,7 +1427,7 @@ void process_file(IOUtil::FileReader* reader,
           default:
             always_assert(validation_exit_code != ExitCode::SUCCESS);
             custom_exit(validation_exit_code);
-        }        
+        }
     } else {
         fdout = open_fdout(ifilename, writer, header, g_force_zlib0_out || force_zlib0, &is_socket);
     }
@@ -2622,7 +2626,7 @@ bool decode_jpeg(const std::vector<std::pair<uint32_t, uint32_t> > & huff_input_
                         if (mcu % mcuh == 0 && old_mcu !=  mcu) {
                             do_handoff_print = true;
                             //fprintf(stderr, "ROW %d\n", (int)row_handoff.size());
-                            
+
                         }
                         if(huffr->eof) {
                             sta = 2;
@@ -2650,7 +2654,7 @@ bool decode_jpeg(const std::vector<std::pair<uint32_t, uint32_t> > & huff_input_
 
                         // fix dc for diff coding
                         colldata.set((BlockType)cmp,0,dpos) = block[0] + lastdc[ cmp ];
-                        
+
                         uint16_t u_last_dc = lastdc[ cmp ] = colldata.set((BlockType)cmp,0,dpos);
                         u_last_dc <<= cs_sal; // lastdc might be negative--this avoids UB
                         // bitshift for succesive approximation
@@ -2664,7 +2668,7 @@ bool decode_jpeg(const std::vector<std::pair<uint32_t, uint32_t> > & huff_input_
                         if (mcu % mcuh == 0 && old_mcu !=  mcu) {
                             do_handoff_print = true;
                             //fprintf(stderr, "ROW %d\n", (int)row_handoff.size());
-                            
+
                         }
                         if(huffr->eof) {
                             sta = 2;
@@ -2730,7 +2734,7 @@ bool decode_jpeg(const std::vector<std::pair<uint32_t, uint32_t> > & huff_input_
                         for ( bpos = 0; bpos < eob; bpos++ ) {
                             aligned_block.mutable_coefficients_zigzag(bpos) = block[ bpos ];
                         }
-                        
+
                         // check for errors, proceed if no error encountered
                         if ( eob < 0 ) sta = -1;
                         else sta = next_mcuposn( &cmp, &dpos, &rstw);
@@ -3561,7 +3565,7 @@ bool write_ujpg(std::vector<ThreadHandoff> row_thread_handoffs,
         }
 #if 0
         fprintf(stderr, "%d->%d) %d - %d {%ld}\n", selected_splits[i].luma_y_start,
-                selected_splits[i].luma_y_end, 
+                selected_splits[i].luma_y_end,
                 row_thread_handoffs[ beginning_of_range ].segment_size,
                 row_thread_handoffs[ end_of_range ].segment_size, row_thread_handoffs.size());
 #endif
@@ -3715,7 +3719,7 @@ bool write_ujpg(std::vector<ThreadHandoff> row_thread_handoffs,
     while (g_encoder->encode_chunk(&colldata, ujg_out,
                                    &selected_splits[0], selected_splits.size()) == CODING_PARTIAL) {
     }
-    
+
     // errormessage if write error
     if ( err != Sirikata::JpegError::nil() ) {
         fprintf( stderr, "write error, possibly drive is full" );
@@ -3877,7 +3881,7 @@ bool read_ujpg( void )
             // read number of false set RST markers per scan from file
             ReadFull(&header_reader, ujpg_mrk, 4);
             scnc = LEtoUint32(ujpg_mrk);
-            
+
             rst_err.insert(rst_err.end(), scnc - rst_err.size(), 0);
             // read data
             ReadFull(&header_reader, rst_err.data(), scnc );
@@ -4082,7 +4086,7 @@ bool setup_imginfo_jpg(bool only_allocate_two_image_rows)
             return false;
         }
     }
-        
+
     // do all remaining component info calculations
     for ( cmp = 0; cmp < cmpc; cmp++ ) {
         if ( cmpnfo[ cmp ].sfh > sfhm ) sfhm = cmpnfo[ cmp ].sfh;
@@ -4321,7 +4325,7 @@ bool parse_jfif_jpg( unsigned char type, unsigned int len, unsigned char* segmen
                 cmpnfo[ cmp ].qtable = qtables[quantization_table_value].begin();
                 hpos += 3;
             }
-    
+
             return true;
 
         case 0xC3: // SOF3 segment
@@ -4347,31 +4351,31 @@ bool parse_jfif_jpg( unsigned char type, unsigned int len, unsigned char* segmen
             fprintf( stderr, "sof7 marker found, image is coded diff. lossless" );
             errorlevel.store(2);
             return false;
-    
+
         case 0xC9: // SOF9 segment
             // coding process: arithmetic extended sequential DCT
             fprintf( stderr, "sof9 marker found, image is coded arithm. sequential" );
             errorlevel.store(2);
             return false;
-    
+
         case 0xCA: // SOF10 segment
             // coding process: arithmetic extended sequential DCT
             fprintf( stderr, "sof10 marker found, image is coded arithm. progressive" );
             errorlevel.store(2);
             return false;
-    
+
         case 0xCB: // SOF11 segment
             // coding process: arithmetic extended sequential DCT
             fprintf( stderr, "sof11 marker found, image is coded arithm. lossless" );
             errorlevel.store(2);
             return false;
-    
+
         case 0xCD: // SOF13 segment
             // coding process: arithmetic differntial sequential DCT
             fprintf( stderr, "sof13 marker found, image is coded arithm. diff. sequential" );
             errorlevel.store(2);
             return false;
-    
+
         case 0xCE: // SOF14 segment
             // coding process: arithmetic differential progressive DCT
             fprintf( stderr, "sof14 marker found, image is coded arithm. diff. progressive" );
@@ -4383,7 +4387,7 @@ bool parse_jfif_jpg( unsigned char type, unsigned int len, unsigned char* segmen
             fprintf( stderr, "sof15 marker found, image is coded arithm. diff. lossless" );
             errorlevel.store(2);
             return false;
-    
+
         case 0xE0: // APP0 segment
         case 0xE1: // APP1 segment
         case 0xE2: // APP2 segment
@@ -4403,7 +4407,7 @@ bool parse_jfif_jpg( unsigned char type, unsigned int len, unsigned char* segmen
         case 0xFE: // COM segment
             // do nothing - return true
             return true;
-    
+
         case 0xD0: // RST0 segment
         case 0xD1: // RST1segment
         case 0xD2: // RST2 segment
@@ -4428,7 +4432,7 @@ bool parse_jfif_jpg( unsigned char type, unsigned int len, unsigned char* segmen
             fprintf( stderr, "eoi marker found out of place" );
             errorlevel.store(2);
             return false;
-    
+
         default: // unknown marker segment
             // return warning
             fprintf( stderr, "unknown marker found: FF %2X", type );
@@ -4793,7 +4797,7 @@ int decode_ac_prg_sa( abitreader* huffr, huffTree* actree, short* block, unsigne
                     n = huffr->read( 1 );
                     block[ bpos ] = ( block[ bpos ] > 0 ) ? n : -n;
                 }
-                if ( bpos++ >= to ) return -1; // error check            
+                if ( bpos++ >= to ) return -1; // error check
             }
         }
         else { // decode eobrun

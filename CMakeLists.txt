@@ -71,12 +71,15 @@ ENDIF()
 
 include_directories(
     ${CMAKE_BINARY_DIR}
+    ${PROJECT_SOURCE_DIR}/inc
     ${PROJECT_SOURCE_DIR}/src/vp8/util
     ${PROJECT_SOURCE_DIR}/src/vp8/model
     ${PROJECT_SOURCE_DIR}/src/vp8/encoder
     ${PROJECT_SOURCE_DIR}/src/vp8/decoder)
 
 SET(LEPTON_SOURCES
+   inc/LlwLeptonWrapper.h
+   src/llw/LlwLeptonWrapper.cpp
    src/lepton/base_coders.hh
    src/lepton/simple_encoder.hh
    src/lepton/bitops.cc
@@ -157,9 +160,9 @@ SET(LEPTON_SOURCES
    src/io/MemMgrAllocator.cc
    src/io/MemMgrAllocator.hh
    )
-add_executable(lepton ${LEPTON_SOURCES})
-add_executable(lepton-slow-best-ratio ${LEPTON_SOURCES})
-add_executable(lepton-avx ${LEPTON_SOURCES})
+add_library(lepton ${LEPTON_SOURCES})
+add_library(lepton-slow-best-ratio ${LEPTON_SOURCES})
+add_library(lepton-avx ${LEPTON_SOURCES})
 SET(ADDITIONAL_FLAGS)
 IF(NOT APPLE)
 IF(NOT WIN32)
