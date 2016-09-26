@@ -78,8 +78,8 @@ include_directories(
     ${PROJECT_SOURCE_DIR}/src/vp8/decoder)
 
 SET(LEPTON_SOURCES
-   inc/LlwLeptonWrapper.h
-   src/llw/LlwLeptonWrapper.cpp
+   inc/LlwLepton.h
+   src/llw/LlwLepton.cpp
    src/lepton/base_coders.hh
    src/lepton/simple_encoder.hh
    src/lepton/bitops.cc
