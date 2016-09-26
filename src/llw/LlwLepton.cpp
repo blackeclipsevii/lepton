@@ -5,25 +5,35 @@
 using namespace llw;
 using namespace std;
 
+#ifndef for_each
+#define for_each(T,begin,end) \
+for(T::iterator it = begin; it != end; ++ it)
+#endif
+
 namespace
 {
     std::string StringVectorToString(StringVector &v)
     {
-        std::string str = "";
+        std::string str = "./lepton ";
         
-        for(StringVector::iterator it = v.begin(); it != v.end(); ++ it)
+        for_each(StringVector, v.begin(), v.end())
         {
             str += *it + " ";
         }
         
-        return str;
+        return str.substr();
     }
 }
 
 bool Lepton::execute(StringVector &vex)
 {
     std::string str = StringVectorToString(vex);
-    char * argv = new char[str.size()];
+    char * argv = new char[str.size()+1];
     memcpy(argv, str.c_str(), str.size());
-    return 0 == theMaine((int)vex.size(), &argv);
+    argv[str.size()] = '\0';
+    
+    bool success = (0 == theMaine(static_cast<int>(vex.size()), &argv));
+    
+    delete[](argv);
+    return success;
 }
