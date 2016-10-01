@@ -57,6 +57,10 @@ void print_results();
 
 namespace llw
 {
+  // initialize the memory used on a per thread basis
+  // must be done BEFORE ANYTHING
+  void initializeMemory( size_t mem_size = 0, size_t thread_mem_size = 0);
+
   // the main function
   // this 'hole' in the code allows the wrapping for llw
   int theMaine( int argc, char** argv );
