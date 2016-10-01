@@ -680,13 +680,10 @@ void compute_thread_mem(const char * arg,
 
 namespace llw
 {
-  int theMaine( int argc, char** argv )
+  void initializeMemory(size_t memSize, size_t threadMemSize)
   {
-      g_argc = argc;
-      g_argv = (const char **)argv;
-      TimingHarness::timing[0][TimingHarness::TS_MAIN]
-          = TimingHarness::get_time_us(true);
       size_t thread_mem_limit =
+          threadMemSize ? threadMemSize : 
   #ifdef HIGH_MEMORY
           128 * 1024 * 1024
   #else
@@ -694,6 +691,7 @@ namespace llw
   #endif
           ;//8192;
       size_t mem_limit =
+          memSize ? memSize :
   #ifdef HIGH_MEMORY
           1280 * 1024 * 1024 - thread_mem_limit * (MAX_NUM_THREADS - 1)
   #else
@@ -701,39 +699,6 @@ namespace llw
   #endif
           ;
       bool needs_huge_pages = false;
-      for (int i = 1; i < argc; ++i) {
-          bool avx2upgrade = false;
-          compute_thread_mem(argv[i],
-                             &mem_limit,
-                             &thread_mem_limit,
-                             &needs_huge_pages,
-                             &avx2upgrade);
-  #ifndef __AVX2__
-  #ifndef __clang__
-  #ifndef _WIN32
-          if (avx2upgrade &&
-              __builtin_cpu_supports("avx2")
-  ) {
-              for (int j = i + 1; j < argc; ++j) {
-                  argv[j - 1] = argv[j];
-              }
-              --argc;
-              argv[argc] = NULL; // since we have eliminated the upgrade arg...
-              size_t command_len = strlen(argv[0]);
-              size_t postfix_len = strlen("-avx") + 1;
-              char * command = (char*)malloc(postfix_len + command_len);
-              memcpy(command, argv[0], command_len);
-              memcpy(command + command_len, "-avx", postfix_len);
-              char * old_command = argv[0];
-              argv[0] = command;
-              execvp(command, argv);
-              argv[0] = old_command; // exec failed
-          }
-  #endif
-  #endif
-  #endif
-      }
-
       // the system needs 33 megs of ram ontop of the uncompressed image buffer.
       // This adds a few extra megs just to keep things real
       UncompressedComponents::max_number_of_blocks = ( mem_limit / 4 ) * 3;
@@ -752,6 +717,17 @@ namespace llw
                             256,
                             needs_huge_pages);
   #endif
+  }
+
+  int theMaine( int argc, char** argv )
+  {
+      g_argc = argc;
+      g_argv = (const char**)argv;
+      TimingHarness::timing[0][TimingHarness::TS_MAIN]
+          = TimingHarness::get_time_us(true);
+
+      // initializeMemory( arv, argv );
+
       clock_t begin = 0, end = 1;
 
       int error_cnt = 0;

@@ -3,37 +3,13 @@
 #include "../src/lepton/jpgcoder.hh"
 
 using namespace llw;
-using namespace std;
 
-#ifndef for_each
-#define for_each(T,begin,end) \
-for(T::iterator it = begin; it != end; ++ it)
-#endif
-
-namespace
+bool Lepton::run(int argc, char** argv)
 {
-    std::string StringVectorToString(StringVector &v)
-    {
-        std::string str = "./lepton ";
-        
-        for_each(StringVector, v.begin(), v.end())
-        {
-            str += *it + " ";
-        }
-        
-        return str.substr();
-    }
+    return (0 == theMaine(argc, argv));
 }
 
-bool Lepton::execute(StringVector &vex)
+void Lepton::ini(size_t mz, size_t tmz)
 {
-    std::string str = StringVectorToString(vex);
-    char * argv = new char[str.size()+1];
-    memcpy(argv, str.c_str(), str.size());
-    argv[str.size()] = '\0';
-    
-    bool success = (0 == theMaine(static_cast<int>(vex.size()), &argv));
-    
-    delete[](argv);
-    return success;
+    initializeMemory(mz, tmz);
 }
